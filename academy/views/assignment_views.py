@@ -2,7 +2,7 @@
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from academy.models import Student, Classroom
+from academy.models import Student, Classroom, Assignment
 from academy.forms import AssignmentForm
 from academy.views.views_utils import calculate_mileage_from_rules
 

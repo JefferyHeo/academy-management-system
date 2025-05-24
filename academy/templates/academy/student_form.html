@@ -29,4 +29,9 @@
 </form>
 
 <a href="{% url 'teacher_dashboard' %}" class="btn btn-link mt-3">← 대시보드로 돌아가기</a>
+    {% if student and student.id %}
+  <form action="{% url 'delete_student' student.id %}" method="get" class="mt-3">
+    <button type="submit" class="btn btn-danger">학생 삭제</button>
+  </form>
+{% endif %}
 {% endblock %}

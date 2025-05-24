@@ -3,6 +3,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from academy.models import Student, Attendance, Assignment, Exam, Classroom
 from academy.views.views_utils import calculate_mileage_from_rules
+from django.contrib.auth.decorators import login_required
 
 def home_redirect(request):
     return redirect('student_login_teacher')
@@ -66,3 +67,4 @@ def student_detail(request, pk):
 def student_list(request):
     students = Student.objects.all()
     return render(request, 'academy/student_list.html', {'students': students})
+

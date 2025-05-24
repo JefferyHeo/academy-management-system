@@ -1,0 +1,9 @@
+{% extends 'academy/base.html' %}
+{% block content %}
+<h3>학생 "{{ student.name }}"을 정말 삭제하시겠습니까?</h3>
+<form method="post">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-danger">삭제</button>
+  <a href="{% url 'student_edit' student.id %}" class="btn btn-secondary">취소</a>
+</form>
+{% endblock %}

@@ -6,13 +6,16 @@ from academy.models import Student, Classroom
 from academy.forms import StudentForm
 from academy.views.views_utils import calculate_mileage_from_rules
 
-@login_required
 def teacher_dashboard(request):
     classrooms = Classroom.objects.filter(teacher_user=request.user)
-    students = Student.objects.filter(classroom__in=classrooms).order_by('classroom__name', 'name')
+    # 정렬: 미정은 맨 아래, 나머지는 가나다순
+    classrooms = sorted(classrooms, key=lambda c: (c.name == "미정", c.name))
+
+    students = Student.objects.filter(classroom__teacher_user=request.user)
+
     return render(request, 'academy/teacher_dashboard.html', {
-        'students': students,
         'classrooms': classrooms,
+        'students': students,
     })
 
 @login_required
@@ -41,11 +44,13 @@ def student_create_done(request):
     request.session['student_created'] = False
     return render(request, 'academy/student_create_done.html')
 
+
 @login_required
 def student_edit(request, student_id):
     student = get_object_or_404(Student, pk=student_id)
     if student.classroom.teacher_user != request.user:
         return redirect('teacher_dashboard')
+
     if request.method == 'POST':
         form = StudentForm(request.POST, instance=student, teacher=request.user)
         if form.is_valid():
@@ -53,9 +58,30 @@ def student_edit(request, student_id):
             return redirect('teacher_dashboard')
     else:
         form = StudentForm(instance=student, teacher=request.user)
-    return render(request, 'academy/student_form.html', {'form': form})
+
+    return render(request, 'academy/student_form.html', {
+        'form': form,
+        'student': student,
+        'action': '수정',
+    })
+
 
 @login_required
 def classroom_list(request):
     classrooms = Classroom.objects.filter(teacher_user=request.user)
     return render(request, 'academy/classroom_list.html', {'classrooms': classrooms})
+
+
+@login_required
+def delete_student(request, student_id):
+    student = get_object_or_404(Student, id=student_id)
+
+    # 현재 로그인한 선생님의 학생인지 확인
+    if student.classroom.teacher_user != request.user:
+        return redirect('teacher_dashboard')
+
+    if request.method == 'POST':
+        student.delete()
+        return redirect('teacher_dashboard')
+
+    return render(request, 'academy/confirm_delete_student.html', {'student': student})

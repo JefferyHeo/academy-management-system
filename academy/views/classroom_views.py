@@ -1,9 +1,10 @@
 # academy/views/classroom_views.py
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from academy.forms import ClassroomForm
-from academy.views.views_utils import calculate_mileage_from_rules
+from academy.models import Classroom, Student
+
 
 
 @login_required
@@ -19,3 +20,20 @@ def classroom_create(request):
     else:
         form = ClassroomForm()
     return render(request, 'academy/classroom_form.html', {'form': form})
+
+@login_required
+def delete_classroom(request, classroom_id):
+    classroom = get_object_or_404(Classroom, id=classroom_id, teacher_user=request.user)
+
+    default_classroom, _ = Classroom.objects.get_or_create(
+        name='미정',
+        teacher_user=request.user,
+        defaults={'teacher_name': request.user.username}
+    )
+
+    if request.method == 'POST':
+        Student.objects.filter(classroom=classroom).update(classroom=default_classroom)
+        classroom.delete()
+        return redirect('teacher_dashboard')
+
+    return render(request, 'academy/confirm_delete_classroom.html', {'classroom': classroom})

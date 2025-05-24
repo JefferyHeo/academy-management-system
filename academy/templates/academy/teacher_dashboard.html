@@ -13,7 +13,12 @@
 
 {% for classroom in classrooms %}
   <div class="mb-4">
-    <h4>📘 반: {{ classroom.name }}</h4>
+    <h4 class="d-flex justify-content-between align-items-center">
+      <span>📘 {{ classroom.name }}</span>
+      {% if classroom.name != "미정" %}
+        <a href="{% url 'delete_classroom' classroom.id %}" class="btn btn-sm btn-danger">반 삭제</a>
+      {% endif %}
+    </h4>
     <ul class="list-group">
       {% for student in students %}
         {% if student.classroom == classroom %}

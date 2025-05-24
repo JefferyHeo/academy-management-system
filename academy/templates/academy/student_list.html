@@ -1,7 +1,7 @@
 <ul class="list-group">
   {% for student in students %}
     <li class="list-group-item">
-      <a href="{% url 'student_detail' student.pk %}">
+      <a href="{% url 'student_public_detail' student.pk %}">
         {{ student.name }} ({{ student.classroom.name }})
       </a>
     </li>

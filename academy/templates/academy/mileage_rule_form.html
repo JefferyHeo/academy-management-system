@@ -46,7 +46,14 @@
   <button type="submit" class="btn btn-success">저장</button>
 </form>
 
+<!-- 목록으로 돌아가기 -->
 <a href="{% url 'mileage_rule_list' %}" class="btn btn-link mt-3">← 목록으로</a>
+
+{% if rule %}
+  <form action="{% url 'delete_mileage_rule' rule.id %}" method="get" class="mt-3">
+    <button type="submit" class="btn btn-danger">❌ 규칙 삭제</button>
+  </form>
+{% endif %}
 
 <script>
   const categoryField = document.getElementById("id_category");

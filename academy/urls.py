@@ -11,6 +11,7 @@ urlpatterns = [
     path('student/auth/<int:student_id>/', views.student_auth, name='student_auth'),
     path('student/me/', views.student_my_page, name='student_my_page'),
     path('student/<int:pk>/', views.student_public_detail, name='student_public_detail'),
+    path('students/<int:student_id>/delete/', views.teacher_views.delete_student, name='delete_student'),
 
     # 👨‍🏫 교사용 학생 관리
     path('teacher/student/add/', views.student_create, name='student_create'),
@@ -20,6 +21,8 @@ urlpatterns = [
 
     # 🏫 반 등록
     path('teacher/classroom/add/', views.classroom_create, name='classroom_create'),
+    path('teacher/classroom/<int:classroom_id>/delete/', views.delete_classroom, name='delete_classroom'),
+
 
     # 📅 출결
     path('attendance/', views.attendance_list, name='attendance_list'),
@@ -40,6 +43,8 @@ urlpatterns = [
     path('teacher/mileage-rules/', views.mileage_rule_list, name='mileage_rule_list'),
     path('teacher/mileage-rules/create/', views.mileage_rule_create, name='mileage_rule_create'),
     path('teacher/mileage-rules/<int:rule_id>/edit/', views.mileage_rule_edit, name='mileage_rule_edit'),
+    path('teacher/mileage-rules/<int:rule_id>/delete/', views.delete_mileage_rule, name='delete_mileage_rule'),
+
 
     # 👨‍🏫 선생님 인증 + 대시보드
     path('teacher/login/', views.teacher_login, name='teacher_login'),
