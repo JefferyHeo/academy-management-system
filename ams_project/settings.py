@@ -119,3 +119,5 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# collectstatic 명령이 모아놓을 실제 디렉토리 경로
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
