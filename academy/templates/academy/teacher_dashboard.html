@@ -1,0 +1,36 @@
+{% extends 'academy/base.html' %}
+
+{% block title %}선생님 대시보드{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">👩‍🏫 {{ request.user.username }} 선생님 대시보드</h2>
+<a href="{% url 'teacher_logout' %}" class="btn btn-danger btn-sm float-end mb-3">로그아웃</a>
+<a href="{% url 'student_create' %}" class="btn btn-primary me-2">➕ 학생 등록</a>
+<a href="{% url 'classroom_create' %}" class="btn btn-outline-secondary">➕ 반 만들기</a>
+<a href="{% url 'mileage_rule_list' %}" class="btn btn-outline-primary">🎯 마일리지 규칙</a>
+
+<hr class="my-4">
+
+{% for classroom in classrooms %}
+  <div class="mb-4">
+    <h4>📘 반: {{ classroom.name }}</h4>
+    <ul class="list-group">
+      {% for student in students %}
+        {% if student.classroom == classroom %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            {{ student.name }} ({{ student.grade }}학년)
+            <span>
+              <a href="{% url 'student_edit' student.id %}" class="btn btn-sm btn-outline-secondary">수정</a>
+              <a href="{% url 'assignment_list' %}?student={{ student.id }}" class="btn btn-sm btn-outline-primary">과제</a>
+              <a href="{% url 'exam_list' %}?student={{ student.id }}" class="btn btn-sm btn-outline-success">시험</a>
+              <a href="{% url 'attendance_list' %}?student={{ student.id }}" class="btn btn-sm btn-outline-warning">출결</a>
+            </span>
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </div>
+{% empty %}
+  <p>아직 담당 중인 반이 없습니다. 먼저 <strong>반을 등록</strong>해 주세요.</p>
+{% endfor %}
+{% endblock %}

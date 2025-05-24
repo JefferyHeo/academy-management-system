@@ -1,0 +1,580 @@
+from datetime import date
+import calendar
+
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+
+
+from .models import Student, Classroom, Attendance, Assignment, Exam, MileageRule
+from .forms import StudentForm, AttendanceForm, AssignmentForm, ExamForm, MileageRuleForm, TeacherSignupForm
+
+
+def home_redirect(request):
+    return redirect('student_login_teacher')
+
+@login_required
+def student_create(request):
+    if request.method == 'POST':
+        form = StudentForm(request.POST, teacher=request.user)  # ✅ teacher 전달
+        if form.is_valid():
+            student = form.save(commit=False)
+            if student.classroom.teacher_user == request.user:
+                student.save()
+                request.session['student_created'] = True
+                return redirect('student_create_done')
+            else:
+                form.add_error(None, "해당 클래스는 선생님의 반이 아닙니다.")
+    else:
+        form = StudentForm(teacher=request.user)  # ✅ GET 요청 시에도 teacher 전달
+    return render(request, 'academy/student_form.html', {
+        'form': form,
+        'action': '등록',
+    })
+
+
+@login_required
+def classroom_list(request):
+    classrooms = Classroom.objects.filter(teacher_user=request.user)
+    return render(request, 'academy/classroom_list.html', {'classrooms': classrooms})
+
+
+
+@login_required
+def student_edit(request, student_id):
+    student = get_object_or_404(Student, pk=student_id)
+    if student.classroom.teacher_user != request.user:
+        return redirect('teacher_dashboard')
+
+    if request.method == 'POST':
+        form = StudentForm(request.POST, instance=student, teacher=request.user)  # ✅ 수정
+        if form.is_valid():
+            form.save()
+            return redirect('teacher_dashboard')
+    else:
+        form = StudentForm(instance=student, teacher=request.user)  # ✅ 수정
+
+    return render(request, 'academy/student_form.html', {'form': form})
+
+
+def student_list(request):
+    students = Student.objects.all()
+    return render(request, 'academy/student_list.html', {'students': students})
+
+from datetime import date
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Attendance, Student
+from .forms import AttendanceForm
+
+from datetime import date
+from django.utils.dateparse import parse_date
+
+@login_required
+def attendance_create(request):
+    student_id = request.GET.get('student')
+    if not student_id:
+        return redirect('teacher_dashboard')
+
+    if request.method == 'POST':
+        form = AttendanceForm(request.POST)
+        if form.is_valid():
+            date_value = form.cleaned_data['date']
+            status = form.cleaned_data['status']
+            reason = form.cleaned_data.get('reason', '')
+
+            attendance, created = Attendance.objects.get_or_create(
+                student_id=student_id,
+                date=date_value,
+                defaults={'status': status, 'reason': reason}
+            )
+            if not created:
+                attendance.status = status
+                attendance.reason = reason
+                attendance.save()
+
+            return redirect(f'/attendance/?student={student_id}')
+
+    else:
+        # ✅ GET 요청일 때 URL로 넘어온 날짜가 있으면 파싱해서 사용
+        date_str = request.GET.get('date')
+        try:
+            selected_date = date.fromisoformat(date_str) if date_str else date.today()
+        except:
+            selected_date = date.today()
+
+        try:
+            # ✅ 해당 날짜의 출결 기록이 있으면 초기값 채워줌
+            attendance = Attendance.objects.get(student_id=student_id, date=selected_date)
+            form = AttendanceForm(initial={
+                'date': attendance.date,
+                'status': attendance.status,
+                'reason': attendance.reason,
+                'student': student_id,
+            })
+        except Attendance.DoesNotExist:
+            # ✅ 없으면 빈 폼에 선택 날짜만 채워줌
+            form = AttendanceForm(initial={
+                'date': selected_date,
+                'student': student_id,
+            })
+
+    return render(request, 'academy/attendance_form.html', {
+        'form': form,
+        'student_id': student_id
+    })
+
+
+# 출결 목록
+@login_required
+def attendance_list(request):
+    student_id = request.GET.get('student')
+    student = get_object_or_404(Student, pk=student_id)
+    today = date.today()
+
+    year = int(request.GET.get('year', today.year))
+    month = int(request.GET.get('month', today.month))
+
+    # 출결 데이터 가져오기
+    attendances = Attendance.objects.filter(
+        student_id=student_id,
+        date__year=year,
+        date__month=month
+    )
+
+    attendance_dict = {a.date.day: a.get_status_display() for a in attendances}
+    attendance_reasons = {a.date.day: a.reason for a in attendances}
+
+    cal = calendar.Calendar(firstweekday=6)  # 일요일부터 시작
+    month_days = cal.monthdayscalendar(year, month)
+
+    # 이전 달, 다음 달 계산
+    if month == 1:
+        prev_month = 12
+        prev_year = year - 1
+    else:
+        prev_month = month - 1
+        prev_year = year
+
+    if month == 12:
+        next_month = 1
+        next_year = year + 1
+    else:
+        next_month = month + 1
+        next_year = year
+
+    context = {
+        'student': student,
+        'year': year,
+        'month': month,
+        'month_days': month_days,
+        'attendance_dict': attendance_dict,
+        'attendance_reasons': attendance_reasons,
+        'prev_year': prev_year,
+        'prev_month': prev_month,
+        'next_year': next_year,
+        'next_month': next_month,
+    }
+    return render(request, 'academy/attendance_list.html', context)
+
+
+# 과제 등록
+@login_required
+def assignment_create(request):
+    student_id = request.GET.get('student') or request.POST.get('student')
+
+    if not student_id:
+        return redirect('teacher_dashboard')
+
+    if request.method == 'POST':
+        form = AssignmentForm(request.POST)
+        if form.is_valid():
+            assignment = form.save(commit=False)
+            assignment.student_id = student_id
+            assignment.save()
+            return redirect(f'/assignments/?student={student_id}')  # ✅ 목록으로 이동
+    else:
+        form = AssignmentForm()
+
+    return render(request, 'academy/assignment_form.html', {
+        'form': form,
+        'student_id': student_id
+    })
+
+# 과제 목록
+@login_required
+def assignment_list(request):
+    student_id = request.GET.get('student')
+    student = None
+    if student_id:
+        assignments = Assignment.objects.filter(student_id=student_id).order_by('-id')
+        student = get_object_or_404(Student, pk=student_id)
+    else:
+        assignments = Assignment.objects.select_related('student').order_by('-id')
+    return render(request, 'academy/assignment_list.html', {
+        'assignments': assignments,
+        'student': student
+    })
+
+# 시험 등록
+@login_required
+def exam_create(request):
+    student_id = request.GET.get('student') or request.POST.get('student')
+
+    if not student_id:
+        return redirect('teacher_dashboard')  # student_id 없으면 대시보드로
+
+    if request.method == 'POST':
+        form = ExamForm(request.POST)
+        if form.is_valid():
+            exam = form.save(commit=False)
+            exam.student_id = student_id  # ✅ student 지정
+            exam.save()
+            return redirect(f'/exams/?student={student_id}')  # ✅ 등록 후 목록으로
+    else:
+        form = ExamForm()
+
+    return render(request, 'academy/exam_form.html', {
+        'form': form,
+        'student_id': student_id  # 템플릿에 넘겨줌
+    })
+
+@login_required
+def exam_edit(request, exam_id):
+    exam = get_object_or_404(Exam, pk=exam_id)
+
+    # 보안 체크
+    if exam.student.classroom.teacher_user != request.user:
+        return redirect('teacher_dashboard')
+
+    if request.method == 'POST':
+        form = ExamForm(request.POST, instance=exam)
+        if form.is_valid():
+            form.save()
+            return redirect(f'/exams/?student={exam.student.id}')
+    else:
+        form = ExamForm(instance=exam)
+
+    return render(request, 'academy/exam_form.html', {
+        'form': form,
+        'student_id': exam.student.id
+    })
+
+
+# 시험 목록
+@login_required
+def exam_list(request):
+    student_id = request.GET.get('student')
+    student = None
+    if student_id:
+        exams = Exam.objects.filter(student_id=student_id).order_by('-exam_date')
+        student = get_object_or_404(Student, pk=student_id)
+    else:
+        exams = Exam.objects.select_related('student').order_by('-exam_date')
+    return render(request, 'academy/exam_list.html', {
+        'exams': exams,
+        'student': student
+    })
+
+# 마이페이지
+def student_detail(request, pk):
+    student = get_object_or_404(Student, pk=pk)
+    attendances = Attendance.objects.filter(student=student).order_by('-date')
+    assignments = Assignment.objects.filter(student=student)
+    exams = Exam.objects.filter(student=student).order_by('-exam_date')
+
+    total_points = calculate_mileage_from_rules(student)
+
+    context = {
+        'student': student,
+        'attendances': attendances,
+        'assignments': assignments,
+        'exams': exams,
+        'total_points': total_points,  # 마일리지 점수
+    }
+    return render(request, 'academy/student_detail.html', context)
+
+# 학생 이름 선택 페이지
+def student_select(request):
+    students = Student.objects.all().order_by('name')
+    return render(request, 'academy/student_select.html', {'students': students})
+
+from calendar import Calendar
+
+
+from datetime import date
+
+
+def student_public_detail(request, pk):
+    student = get_object_or_404(Student, pk=pk)
+
+    attendances = Attendance.objects.filter(student=student).order_by('-date')
+    assignments = Assignment.objects.filter(student=student)
+    exams = Exam.objects.filter(student=student).order_by('-exam_date')
+
+    total_points = calculate_mileage_from_rules(student)
+
+    context = {
+        'student': student,
+        'attendances': attendances,
+        'assignments': assignments,
+        'exams': exams,
+        'total_points': total_points,
+    }
+    return render(request, 'academy/student_public_detail.html', context)
+# 선생님 뷰
+def teacher_dashboard(request):
+    return render(request, 'academy/teacher_dashboard.html')
+
+
+@login_required
+def mileage_rule_list(request):
+    rules = MileageRule.objects.filter(teacher=request.user)  # ✅ 본인 룰만
+    return render(request, 'academy/mileage_rule_list.html', {'rules': rules})
+
+
+@login_required
+def mileage_rule_create(request):
+    if request.method == 'POST':
+        form = MileageRuleForm(request.POST)
+        if form.is_valid():
+            rule = form.save(commit=False)
+            rule.teacher = request.user  # ✅ 현재 로그인한 선생님 연결
+            rule.save()
+            return redirect('mileage_rule_list')
+    else:
+        form = MileageRuleForm()
+    return render(request, 'academy/mileage_rule_form.html', {'form': form})
+
+
+def mileage_rule_edit(request, rule_id):
+    rule = get_object_or_404(MileageRule, pk=rule_id)
+    if request.method == 'POST':
+        form = MileageRuleForm(request.POST, instance=rule)
+        if form.is_valid():
+            form.save()
+            return redirect('mileage_rule_list')
+    else:
+        form = MileageRuleForm(instance=rule)
+    return render(request, 'academy/mileage_rule_form.html', {'form': form})
+
+def calculate_mileage_from_rules(student):
+    total_points = 0
+    teacher_user = student.classroom.teacher_user  # ✅ 담당 선생님(User 객체)
+    rules = MileageRule.objects.filter(teacher=teacher_user)  # ✅ 해당 선생님의 규칙만 적용
+
+    for rule in rules:
+        if rule.category == 'attendance':
+            for a in Attendance.objects.filter(student=student):
+                if a.status == rule.condition:
+                    total_points += rule.points
+
+        elif rule.category == 'assignment':
+            for asg in Assignment.objects.filter(student=student):
+                if rule.condition == 'submitted' and asg.submitted:
+                    total_points += rule.points
+                elif rule.condition == 'not_submitted' and not asg.submitted:
+                    total_points += rule.points
+
+        elif rule.category == 'exam':
+            for e in Exam.objects.filter(student=student):
+                try:
+                    cond = rule.condition
+                    val = None
+                    if cond.startswith("score>="):
+                        val = float(cond.split(">=")[1])
+                        if e.score >= val:
+                            total_points += rule.points
+                    elif cond.startswith("score>"):
+                        val = float(cond.split(">")[1])
+                        if e.score > val:
+                            total_points += rule.points
+                    elif cond.startswith("score=="):
+                        val = float(cond.split("==")[1])
+                        if e.score == val:
+                            total_points += rule.points
+                    elif cond.startswith("score<="):
+                        val = float(cond.split("<=")[1])
+                        if e.score <= val:
+                            total_points += rule.points
+                    elif cond.startswith("score<"):
+                        val = float(cond.split("<")[1])
+                        if e.score < val:
+                            total_points += rule.points
+                except (ValueError, IndexError):
+                    continue
+
+    return total_points
+
+
+
+
+# 1단계: 선생님 이름 입력 페이지
+def student_login_teacher(request):
+    return render(request, 'academy/student_login_teacher.html')
+
+# 2단계: 학생 목록 보기 (해당 선생님의 반)
+def student_select(request):
+    teacher = request.GET.get('teacher')
+    classrooms = Classroom.objects.filter(teacher_name=teacher)
+    students = Student.objects.filter(classroom__in=classrooms).order_by('name')
+    return render(request, 'academy/student_select.html', {'students': students, 'teacher': teacher})
+
+# 3단계: 비밀번호 입력
+def student_auth(request, student_id):
+    student = get_object_or_404(Student, pk=student_id)
+    error = None
+    if request.method == 'POST':
+        password = request.POST.get('password')
+        if password == student.password:
+            request.session['student_id'] = student.id
+            return redirect('student_my_page')
+        else:
+            error = "비밀번호가 틀렸습니다."
+    return render(request, 'academy/student_auth.html', {'student': student, 'error': error})
+
+# 4단계: 마이페이지
+def student_my_page(request):
+    student_id = request.session.get('student_id')
+    if not student_id:
+        return redirect('student_login_teacher')
+    student = get_object_or_404(Student, pk=student_id)
+    attendances = Attendance.objects.filter(student=student)
+    assignments = Assignment.objects.filter(student=student)
+    exams = Exam.objects.filter(student=student)
+    total_points = calculate_mileage_from_rules(student)
+    return render(request, 'academy/student_public_detail.html', {
+        'student': student,
+        'attendances': attendances,
+        'assignments': assignments,
+        'exams': exams,
+        'total_points': total_points,
+    })
+
+
+# 로그인 폼
+def teacher_login(request):
+    error = None
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect('teacher_dashboard')
+        else:
+            error = '아이디 또는 비밀번호가 올바르지 않습니다.'
+    return render(request, 'academy/teacher_login.html', {'error': error})
+
+# 로그아웃
+def teacher_logout(request):
+    logout(request)
+    return redirect('teacher_login')
+
+# 선생님 전용 대시보드 (본인이 관리하는 반의 학생만 보여줌)
+@login_required
+def teacher_dashboard(request):
+    classrooms = Classroom.objects.filter(teacher_user=request.user)
+    students = Student.objects.filter(classroom__in=classrooms).order_by('classroom__name', 'name')
+    return render(request, 'academy/teacher_dashboard.html', {
+        'students': students,
+        'classrooms': classrooms,
+    })
+
+
+def create_default_mileage_rules(teacher_user):
+    default_rules = [
+        {'category': 'attendance', 'condition': 'present', 'points': 5, 'description': '출석 시'},
+        {'category': 'attendance', 'condition': 'late', 'points': -3, 'description': '지각 시'},
+        {'category': 'attendance', 'condition': 'absent', 'points': -10, 'description': '결석 시'},
+        {'category': 'assignment', 'condition': 'submitted', 'points': 7, 'description': '과제 제출 시'},
+        {'category': 'assignment', 'condition': 'not_submitted', 'points': -5, 'description': '과제 미제출 시'},
+        {'category': 'exam', 'condition': 'score>=100', 'points': 15, 'description': '시험 만점 시'},
+    ]
+
+    for rule in default_rules:
+        MileageRule.objects.create(teacher=teacher_user, **rule)
+
+
+def teacher_signup(request):
+    if request.method == 'POST':
+        form = TeacherSignupForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.is_staff = True  # 선생님 계정 표시
+            user.save()
+            create_default_mileage_rules(user)
+            login(request, user)
+            return redirect('teacher_dashboard')
+    else:
+        form = TeacherSignupForm()
+    return render(request, 'academy/teacher_signup.html', {'form': form})
+
+from .forms import ClassroomForm
+
+@login_required
+def classroom_create(request):
+    if request.method == 'POST':
+        form = ClassroomForm(request.POST)
+        if form.is_valid():
+            classroom = form.save(commit=False)
+            classroom.teacher_user = request.user
+            classroom.teacher_name = request.user.username
+            classroom.save()
+            return redirect('teacher_dashboard')
+    else:
+        form = ClassroomForm()
+    return render(request, 'academy/classroom_form.html', {'form': form})
+
+# ✅ 학생 등록 완료 페이지
+@login_required
+def student_create_done(request):
+    if not request.session.get('student_created'):
+        return redirect('student_create')
+    request.session['student_created'] = False
+    return render(request, 'academy/student_create_done.html')
+
+@login_required
+def attendance_calendar(request, calendar=None):
+    student_id = request.GET.get('student')
+    student = get_object_or_404(Student, pk=student_id)
+    today = date.today()
+
+    year = int(request.GET.get('year', today.year))
+    month = int(request.GET.get('month', today.month))
+
+    attendances = Attendance.objects.filter(
+        student_id=student_id,
+        date__year=year,
+        date__month=month
+    )
+
+    attendance_dict = {a.date.day: a.get_status_display() for a in attendances}
+
+    cal = calendar.Calendar(firstweekday=6)  # 일요일 시작
+    month_days = cal.monthdayscalendar(year, month)  # 주별로 일자 정리
+
+    context = {
+        'student': student,
+        'year': year,
+        'month': month,
+        'month_days': month_days,
+        'attendance_dict': attendance_dict,
+    }
+    return render(request, 'academy/attendance_calendar.html', context)
+
+
+@login_required
+def assignment_toggle(request, assignment_id):
+    assignment = get_object_or_404(Assignment, pk=assignment_id)
+
+    # 보안 체크: 로그인한 선생님이 이 학생의 담당 교사일 경우만 변경 허용
+    if assignment.student.classroom.teacher_user != request.user:
+        return redirect('teacher_dashboard')
+
+    # 제출 여부 토글
+    assignment.submitted = not assignment.submitted
+    assignment.save()
+
+    return redirect(f'/assignments/?student={assignment.student.id}')

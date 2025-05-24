@@ -1,0 +1,13 @@
+{% extends 'academy/base.html' %}
+
+{% block title %}반 등록{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">➕ 반 등록</h2>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit" class="btn btn-success">반 만들기</button>
+</form>
+<a href="{% url 'teacher_dashboard' %}" class="btn btn-link mt-3">← 대시보드로 돌아가기</a>
+{% endblock %}

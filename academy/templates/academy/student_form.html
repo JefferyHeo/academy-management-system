@@ -1,0 +1,32 @@
+{% extends 'academy/base.html' %}
+
+{% block title %}학생 {{ action }}{% endblock %}
+
+{% block content %}
+<h2>학생 정보 {{ action }}</h2>
+
+<form method="post">
+  {% csrf_token %}
+
+  <div class="mb-3">
+    {{ form.name.label_tag }} {{ form.name }}
+  </div>
+  <div class="mb-3">
+    {{ form.contact.label_tag }} {{ form.contact }}
+  </div>
+  <div class="mb-3">
+    {{ form.grade.label_tag }} {{ form.grade }}
+  </div>
+  <div class="mb-3">
+    {{ form.classroom.label_tag }} {{ form.classroom }}
+    <small class="form-text text-muted">※ 선생님이 등록한 반만 선택할 수 있습니다.</small>
+  </div>
+  <div class="mb-3">
+    {{ form.password.label_tag }} {{ form.password }}
+  </div>
+
+  <button type="submit" class="btn btn-success w-100">학생 {{ action }}</button>
+</form>
+
+<a href="{% url 'teacher_dashboard' %}" class="btn btn-link mt-3">← 대시보드로 돌아가기</a>
+{% endblock %}

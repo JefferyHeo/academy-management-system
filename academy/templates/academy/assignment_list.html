@@ -1,0 +1,36 @@
+{% extends 'academy/base.html' %}
+
+{% block title %}과제 목록{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">과제 목록</h2>
+
+{% if student %}
+  <a href="{% url 'assignment_create' %}?student={{ student.id }}" class="btn btn-success mb-3">+ 과제 추가</a>
+{% endif %}
+
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>학생</th>
+      <th>과제 제목</th>
+      <th>제출 여부</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for a in assignments %}
+      <tr>
+        <td>{{ a.student.name }}</td>
+        <td>{{ a.title }}</td>
+        <td>
+          <a href="{% url 'assignment_toggle' assignment_id=a.id %}" class="btn btn-sm {% if a.submitted %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            {% if a.submitted %}제출{% else %}미제출{% endif %}
+          </a>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<a href="{% url 'teacher_dashboard' %}" class="btn btn-link mt-3">← 대시보드로</a>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'academy/base.html' %}
+{% block title %}학생 로그인 - 선생님 선택{% endblock %}
+{% block content %}
+<h2 class="mb-4">학생 로그인</h2>
+<form method="get" action="{% url 'student_select' %}">
+  <label class="form-label">담임 선생님 이름</label>
+  <input type="text" name="teacher" class="form-control mb-3" required>
+  <button type="submit" class="btn btn-primary w-100">확인</button>
+</form>
+{% endblock %}

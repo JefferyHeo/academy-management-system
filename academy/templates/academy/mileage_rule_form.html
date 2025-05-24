@@ -1,0 +1,91 @@
+{% extends 'academy/base.html' %}
+{% block title %}마일리지 룰 추가/수정{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">➕ 마일리지 규칙 추가/수정</h2>
+{% if form.errors %}
+  <div class="alert alert-danger">
+    <ul>
+      {% for field in form %}
+        {% for error in field.errors %}
+          <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+        {% endfor %}
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+<form method="post" id="rule-form">
+  {% csrf_token %}
+  <div class="mb-3">
+    {{ form.category.label_tag }} {{ form.category }}
+  </div>
+
+  <!-- 출결/과제용 condition -->
+  <div class="mb-3" id="condition-wrapper">
+    {{ form.condition.label_tag }}
+    <select name="condition" id="id_condition" class="form-select">
+      <!-- JS로 조건 삽입 -->
+    </select>
+  </div>
+
+  <!-- 시험용: 점수 + 연산자 -->
+  <div class="row mb-3" id="exam-fields" style="display: none;">
+    <div class="col">
+      {{ form.score_value.label_tag }} {{ form.score_value }}
+    </div>
+    <div class="col">
+      {{ form.score_operator.label_tag }} {{ form.score_operator }}
+    </div>
+  </div>
+
+  <div class="mb-3">
+    {{ form.points.label_tag }} {{ form.points }}
+  </div>
+
+  <button type="submit" class="btn btn-success">저장</button>
+</form>
+
+<a href="{% url 'mileage_rule_list' %}" class="btn btn-link mt-3">← 목록으로</a>
+
+<script>
+  const categoryField = document.getElementById("id_category");
+  const conditionSelect = document.getElementById("id_condition");
+  const conditionWrapper = document.getElementById("condition-wrapper");
+  const examFields = document.getElementById("exam-fields");
+
+  const conditionOptions = {
+    attendance: [
+      { value: 'present', label: '출석' },
+      { value: 'late', label: '지각' },
+      { value: 'absent', label: '결석' },
+    ],
+    assignment: [
+      { value: 'submitted', label: '제출함' },
+      { value: 'not_submitted', label: '미제출' },
+    ],
+  };
+
+  function updateConditionUI() {
+    const category = categoryField.value;
+    if (category === 'exam') {
+      conditionWrapper.style.display = "none";
+      examFields.style.display = "flex";
+    } else {
+      conditionWrapper.style.display = "block";
+      examFields.style.display = "none";
+      conditionSelect.innerHTML = "";
+      const opts = conditionOptions[category] || [];
+      for (const opt of opts) {
+        const option = document.createElement("option");
+        option.value = opt.value;
+        option.textContent = opt.label;
+        conditionSelect.appendChild(option);
+      }
+    }
+  }
+
+  categoryField.addEventListener("change", updateConditionUI);
+  document.addEventListener("DOMContentLoaded", updateConditionUI);
+</script>
+{% endblock %}

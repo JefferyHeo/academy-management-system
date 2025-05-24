@@ -1,0 +1,17 @@
+{% extends 'academy/base.html' %}
+
+{% block title %}선생님 회원가입{% endblock %}
+
+{% block content %}
+  <h2>👩‍🏫 선생님 회원가입</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-success">회원가입</button>
+  </form>
+
+  <div class="mt-3 text-center">
+    <a href="{% url 'teacher_login' %}" class="btn btn-link">← 로그인 페이지로 돌아가기</a>
+  </div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'academy/base.html' %}
+{% block title %}비밀번호 입력{% endblock %}
+{% block content %}
+<h2 class="mb-3">{{ student.name }} - 비밀번호 입력</h2>
+{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+<form method="post">
+  {% csrf_token %}
+  <label class="form-label">비밀번호 (4자리)</label>
+  <input type="password" name="password" maxlength="4" class="form-control mb-3" required>
+  <button type="submit" class="btn btn-success w-100">로그인</button>
+</form>
+<a href="{% url 'student_select' %}?teacher={{ student.classroom.teacher_name }}" class="btn btn-secondary mt-3">← 학생 목록으로</a>
+{% endblock %}

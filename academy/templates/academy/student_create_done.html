@@ -1,0 +1,9 @@
+{% extends 'academy/base.html' %}
+{% block title %}학생 등록 완료{% endblock %}
+
+{% block content %}
+<div class="text-center mt-5">
+  <h3 class="mb-4">✅ 학생이 성공적으로 등록되었습니다!</h3>
+  <a href="{% url 'teacher_dashboard' %}" class="btn btn-primary">확인</a>
+</div>
+{% endblock %}

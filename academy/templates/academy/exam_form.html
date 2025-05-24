@@ -1,0 +1,27 @@
+{% extends 'academy/base.html' %}
+
+{% block title %}시험 등록{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">시험 등록</h2>
+<form method="post">
+  {% csrf_token %}
+  {% if student_id %}
+    <input type="hidden" name="student" value="{{ student_id }}">
+  {% endif %}
+  <div class="mb-3">
+    {{ form.subject.label_tag }}
+    {{ form.subject }}
+  </div>
+  <div class="mb-3">
+    {{ form.score.label_tag }}
+    {{ form.score }}
+  </div>
+  <div class="mb-3">
+    {{ form.exam_date.label_tag }}
+    {{ form.exam_date }}
+  </div>
+  <button type="submit" class="btn btn-success">등록</button>
+</form>
+<a href="{% url 'teacher_dashboard' %}" class="btn btn-link mt-3">← 대시보드로</a>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'academy/base.html' %}
+
+{% block title %}선생님 로그인{% endblock %}
+
+{% block content %}
+  <h2>👩‍🏫 선생님 로그인</h2>
+
+  {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="username" class="form-label">아이디</label>
+      <input type="text" name="username" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label for="password" class="form-label">비밀번호</label>
+      <input type="password" name="password" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-primary">로그인</button>
+  </form>
+
+  <div class="mt-4 text-center">
+    <p>계정이 없으신가요?
+      <a href="{% url 'teacher_signup' %}" class="btn btn-outline-success btn-sm ms-2">회원가입</a>
+    </p>
+  </div>
+{% endblock %}

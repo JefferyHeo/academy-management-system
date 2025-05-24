@@ -1,0 +1,36 @@
+{% extends 'academy/base.html' %}
+{% block title %}마일리지 룰 목록{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">🎯 마일리지 규칙 목록</h2>
+<a href="{% url 'mileage_rule_create' %}" class="btn btn-primary mb-3">➕ 규칙 추가</a>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>카테고리</th>
+      <th>조건</th>
+      <th>설명</th>
+      <th>점수</th>
+      <th>수정</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for rule in rules %}
+    <tr>
+      <td>{{ rule.get_category_display }}</td>
+      <td>{{ rule.condition }}</td>
+      <td>{{ rule.description }}</td>
+      <td>{{ rule.points }}점</td>
+      <td>
+        <a href="{% url 'mileage_rule_edit' rule.id %}" class="btn btn-sm btn-outline-primary">수정</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">등록된 마일리지 규칙이 없습니다.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<a href="{% url 'teacher_dashboard' %}" class="btn btn-link">← 대시보드로</a>
+{% endblock %}

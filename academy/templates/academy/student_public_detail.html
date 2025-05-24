@@ -1,0 +1,48 @@
+{% extends 'academy/base.html' %}
+{% load custom_filters %}
+{% block title %}마이페이지{% endblock %}
+
+{% block content %}
+<h2>{{ student.name }}님의 마이페이지</h2>
+<p><strong>반:</strong> {{ student.classroom.name }}</p>
+<p><strong>학년:</strong> {{ student.grade }}</p>
+<!--<p><strong>연락처:</strong> {{ student.contact }}</p>-->
+<p><strong>마일리지 점수:</strong> {{ total_points }}점</p>
+<hr>
+
+<h4>📘 출결 내역</h4>
+<table class="table table-striped mb-4">
+  <thead>
+    <tr>
+      <th>날짜</th>
+      <th>상태</th>
+      <th>사유</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for a in attendances %}
+      <tr>
+        <td>{{ a.date }}</td>
+        <td>{{ a.get_status_display }}</td>
+        <td>{{ a.reason|default:"-" }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h4>📝 과제 제출</h4>
+<ul class="list-group mb-4">
+  {% for a in assignments %}
+    <li class="list-group-item">{{ a.title }} - {{ a.date }} - {% if a.submitted %}제출{% else %}미제출{% endif %}</li>
+  {% endfor %}
+</ul>
+
+<h4>🧪 시험 점수</h4>
+<ul class="list-group mb-4">
+  {% for e in exams %}
+    <li class="list-group-item">{{ e.subject }} - {{ e.exam_date }} - {{ e.score }}점</li>
+  {% endfor %}
+</ul>
+
+<a href="{% url 'student_login_teacher' %}" class="btn btn-primary mt-4">⬅ 처음으로</a>
+{% endblock %}

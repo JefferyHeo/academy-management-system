@@ -1,0 +1,46 @@
+{% extends 'academy/base.html' %}
+
+{% load custom_filters %}
+
+{% block title %}출결 달력{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">{{ student.name }} - {{ year }}년 {{ month }}월 출결 달력</h2>
+
+<div class="mb-3">
+  <a href="?student={{ student.id }}&year={{ prev_year }}&month={{ prev_month }}" class="btn btn-outline-primary">← 이전 달</a>
+  <a href="?student={{ student.id }}&year={{ next_year }}&month={{ next_month }}" class="btn btn-outline-primary">다음 달 →</a>
+</div>
+
+<a href="{% url 'attendance_create' %}?student={{ student.id }}&date={{ year }}-{{ month|stringformat:'02d' }}-{{ day|stringformat:'02d' }}" class="btn btn-primary mb-3">출결 추가/수정</a>
+
+<table class="table table-bordered text-center">
+  <thead>
+    <tr>
+      <th>일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for week in month_days %}
+    <tr>
+      {% for day in week %}
+        {% if day == 0 %}
+          <td></td>
+        {% else %}
+          <td>
+            <strong>{{ day }}</strong><br>
+            {% with status=attendance_dict|dict_get:day reason=attendance_reasons|dict_get:day %}
+              {% if status %}
+                <span title="{{ reason }}">{{ status }}</span>
+              {% endif %}
+            {% endwith %}
+          </td>
+        {% endif %}
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<a href="{% url 'teacher_dashboard' %}" class="btn btn-link">← 대시보드로</a>
+{% endblock %}

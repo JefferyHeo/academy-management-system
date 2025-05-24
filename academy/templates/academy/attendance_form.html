@@ -1,0 +1,61 @@
+{% extends 'academy/base.html' %}
+
+{% block title %}출결 등록/수정{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">출결 등록/수정</h2>
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-success">{{ message }}</div>
+  {% endfor %}
+{% endif %}
+
+<form method="post">
+  {% csrf_token %}
+  <div class="mb-3">
+    {{ form.date.label_tag }} {{ form.date }}
+  </div>
+  <div class="mb-3">
+    {{ form.status.label_tag }} {{ form.status }}
+  </div>
+
+  <div class="mb-3" id="reason-field" style="display: none;">
+    {{ form.reason.label_tag }} {{ form.reason }}
+  </div>
+
+  <input type="hidden" name="student" value="{{ student_id }}">
+
+  <button type="submit" class="btn btn-success mt-3">등록</button>
+</form>
+
+<a href="{% url 'teacher_dashboard' %}" class="btn btn-link mt-3">← 대시보드로</a>
+
+<script>
+  const statusSelect = document.getElementById("id_status");
+  const reasonField = document.getElementById("reason-field");
+
+  function toggleReasonField() {
+    const value = statusSelect.value;
+    reasonField.style.display = (value === "late" || value === "absent") ? "block" : "none";
+  }
+
+  if (statusSelect) {
+    statusSelect.addEventListener("change", toggleReasonField);
+    document.addEventListener("DOMContentLoaded", toggleReasonField);
+  }
+
+  // ✅ 날짜 변경 시 서버에 다시 요청
+  const dateInput = document.getElementById("id_date");
+  const studentId = "{{ student_id }}";
+
+  if (dateInput) {
+    dateInput.addEventListener("change", () => {
+      const selectedDate = dateInput.value;
+      const baseUrl = "{% url 'attendance_create' %}";
+      window.location.href = `${baseUrl}?student=${studentId}&date=${selectedDate}`;
+    });
+  }
+</script>
+
+{% endblock %}
