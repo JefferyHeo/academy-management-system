@@ -35,3 +35,6 @@ gunicorn.sock
 # macOS & Linux system files
 .DS_Store
 Thumbs.db
+
+# .gitignore 마지막 줄에 추가
+deploy.sh
