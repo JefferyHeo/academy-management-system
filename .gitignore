@@ -1,6 +1,37 @@
+# Python
 __pycache__/
+*.py[cod]
+*.pyo
+*.pyd
 *.pyc
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+
+# Django
+*.log
+*.pot
+*.pyc
+*.sqlite3
 db.sqlite3
-.env
 media/
 staticfiles/
+local_settings.py
+
+# Secret or config
+.env
+*.env
+
+# Gunicorn socket
+gunicorn.sock
+
+# VSCode, PyCharm, etc.
+.vscode/
+.idea/
+
+# macOS & Linux system files
+.DS_Store
+Thumbs.db
