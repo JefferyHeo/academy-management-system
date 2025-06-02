@@ -114,7 +114,7 @@ USE_L10N = True
 USE_TZ = True
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'http')
-CSRF_TRUSTED_ORIGINS = ['http://jefferyheo-dev.xyz', 'http://www.jefferyheo-dev.xyz']
+CSRF_TRUSTED_ORIGINS = ['https://jefferyheo-dev.xyz', 'https://www.jefferyheo-dev.xyz']
 
 
 # Static files (CSS, JavaScript, Images)
