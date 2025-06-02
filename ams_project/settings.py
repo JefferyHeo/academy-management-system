@@ -117,7 +117,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = '/ams/static/'
+MEDIA_URL = '/ams/media/'
+FORCE_SCRIPT_NAME = '/ams'
 
 # collectstatic 명령이 모아놓을 실제 디렉토리 경로
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
