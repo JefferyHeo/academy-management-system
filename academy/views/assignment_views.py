@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from academy.models import Student, Classroom, Assignment
 from academy.forms import AssignmentForm
-from academy.views.views_utils import calculate_mileage_from_rules
+from django.urls import reverse
 
 
 @login_required
@@ -18,7 +18,7 @@ def assignment_create(request):
             assignment = form.save(commit=False)
             assignment.student_id = student_id
             assignment.save()
-            return redirect(f'/assignments/?student={student_id}')
+            return redirect(reverse('assignment_list') + f'?student={student_id}')  # 수정됨
     else:
         form = AssignmentForm()
     return render(request, 'academy/assignment_form.html', {
@@ -47,4 +47,4 @@ def assignment_toggle(request, assignment_id):
         return redirect('teacher_dashboard')
     assignment.submitted = not assignment.submitted
     assignment.save()
-    return redirect(f'/assignments/?student={assignment.student.id}')
+    return redirect(reverse('assignment_list') + f'?student={assignment.student.id}')

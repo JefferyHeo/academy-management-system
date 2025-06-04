@@ -30,7 +30,7 @@ def attendance_create(request):
                 attendance.status = status
                 attendance.reason = reason
                 attendance.save()
-            return redirect(f'/attendance/?student={student_id}')
+            return redirect(reverse('attendance_list') + f'?student={student_id}')
     else:
         date_str = request.GET.get('date')
         try:
